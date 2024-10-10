@@ -15,28 +15,50 @@ Pengajuan
 @section('content')
     <div>
         <h1>Daftar Pengajuan</h1>
-        @if(session('import_errors'))
-            <div class="alert alert-danger">
-                <ul>
-                    @foreach(session('import_errors') as $failure)
-                        <li>{{ $failure->errors()[0] }} di baris {{ $failure->row() }}</li>
-                    @endforeach
-                </ul>
+        <div class="d-flex justify-content-between mb-2">
+            <div>
+                @if(session('import_errors'))
+                    <div class="alert alert-danger">
+                        <ul>
+                            @foreach(session('import_errors') as $failure)
+                                <li>{{ $failure->errors()[0] }} di baris {{ $failure->row() }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <div class="mb-2">
+                    <a class="btn btn-outline-primary" href="#" data-toggle="modal" data-target="#tambahPengajuanModal">
+                        Tambah Pengajuan
+                        <i class="fas fa-plus"></i>
+                    </a>
+                    <a type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#uploadModal">
+                        Upload Excel
+                        <i class="fa fa-upload"></i>
+                    </a>
+                    <a type="button" class="btn btn-outline-info" href="{{ route('pengajuan.index').'?export=true' }}">
+                        Export Excel
+                        <i class="fa fa-download"></i>
+                    </a>
+                </div>
             </div>
-        @endif
-        <div class="mb-2">
-            <a class="btn btn-outline-primary" href="#" data-toggle="modal" data-target="#tambahPengajuanModal">
-                Tambah Pengajuan
-                <i class="fas fa-plus"></i>
-            </a>
-            <a type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#uploadModal">
-                Upload Excel
-                <i class="fa fa-upload"></i>
-            </a>
-            <a type="button" class="btn btn-outline-info" href="{{ route('pengajuan.index').'?export=true' }}">
-                Export Excel
-                <i class="fa fa-download"></i>
-            </a>
+            <div class="d-flex">
+                <div class="form-group mr-2">
+                    <select id="filter-tahun" class="form-select select2" onchange="filterByYear()">
+                        <option value="">Semua Tahun</option>
+                        @foreach($years as $year)
+                            <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select id="filter-prodi" class="form-select select2" onchange="filterByProdi()">
+                        <option value="">Semua Prodi</option>
+                        @foreach($prodi as $p)
+                            <option value="{{ $p->id }}" {{ request('prodi') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
         
         <table class="table mt-4" id="customers">
@@ -240,6 +262,18 @@ Pengajuan
             });
 
         });
+        function filterByYear() {
+            var year = $('#filter-tahun').val(); // Ambil tahun yang dipilih
+            var url = new URL(window.location.href); // Ambil URL saat ini
+            url.searchParams.set('year', year); // Set parameter tahun
+            window.location.href = url; // Reload halaman dengan parameter baru
+        }
+        function filterByProdi() {
+            var prodi = $('#filter-prodi').val(); // Ambil prodi yang dipilih
+            var url = new URL(window.location.href); // Ambil URL saat ini
+            url.searchParams.set('prodi', prodi); // Set parameter prodi
+            window.location.href = url; // Reload halaman dengan parameter baru
+        }
     </script>
     @if ($errors->any())
         <script type="text/javascript">

@@ -13,43 +13,67 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class PengajuanController extends Controller
 {
-    public function index()
-    {
-        // Menampilkan semua data pengajuan
-	    $pengajuan = Pengajuan::haveProdi()->get();
-	    
-	    $pengajuan = $pengajuan->map(function ($item) {
-            // jika isbn pernah diajukan sebelum tahun sekarang berdasarkan created_at, jika diajukan lagi berikan mark bahwa buku tersebut pernah diajukan
-            $item->is_diajukan = Pengajuan::where('isbn', $item->isbn)
-	            ->where('isbn', '!=', null)
-	            ->where('isbn', '!=', '-')
-	            ->where('isbn', '!=', ' ')
-	            ->where('prodi_id', $item->prodi_id)
-                ->count() > 1;
-            if($item->is_diajukan){
-	            $item->date_pernah_diajukan = Pengajuan::where('isbn', $item->isbn)
-		            ->orderBy('created_at','desc')
-		            ->first()
-		            ->created_at ?? null;
-            }
+	public function index(Request $request)
+	{
+		// Ambil tahun yang tersedia untuk filter
+		$years = Pengajuan::selectRaw('YEAR(created_at) as year')
+			->distinct()
+			->pluck('year')
+			->sort();
+	
+		// Ambil semua prodi untuk filter
+		$prodi = Prodi::all();
+	
+		// Query dasar untuk menampilkan semua data pengajuan
+		$pengajuanQuery = Pengajuan::haveProdi();
+	
+		// Jika ada filter tahun, tambahkan kondisi
+		if ($request->filled('year')) {
+			$pengajuanQuery->whereYear('created_at', $request->year);
+		}
+	
+		// Jika ada filter prodi, tambahkan kondisi
+		if ($request->filled('prodi')) {
+			$pengajuanQuery->where('prodi_id', $request->prodi);
+		}
+	
+		// Ambil semua pengajuan sesuai dengan query yang telah difilter
+		$pengajuan = $pengajuanQuery->get();
+	
+		// Mapping untuk menambahkan detail dan menandai apakah sudah diajukan
+		$pengajuan = $pengajuan->map(function ($item) {
+			// Jika ISBN pernah diajukan, berikan tanda
+			$item->is_diajukan = Pengajuan::where('isbn', $item->isbn)
+				->where('isbn', '!=', null)
+				->where('isbn', '!=', '-')
+				->where('isbn', '!=', ' ')
+				->where('prodi_id', $item->prodi_id)
+				->count() > 1;
+	
+			if ($item->is_diajukan) {
+				$item->date_pernah_diajukan = Pengajuan::where('isbn', $item->isbn)
+					->orderBy('created_at', 'desc')
+					->first()
+					->created_at ?? null;
+			}
+	
+			// Menambahkan informasi prodi
 			$item->nama_prodi = $item->prodi->nama;
 			$item->prodi_id = $item->prodi->id;
-            return $item;
-        });
-		
-		if(request()->has('export')) {
+			return $item;
+		});
+	
+		// Ekspor ke Excel jika diminta
+		if ($request->has('export')) {
 			$excelReport = new PengajuanExport($pengajuan);
 			$fileName = 'daftar_pengajuan_' . date('Y-m-d_H-i-s') . '.xlsx';
 			return Excel::download($excelReport, $fileName);
 		}
-		
-		// $prodi = Prodi::all();
-		$user = Auth::user();
-		$prodi = Prodi::when($user->prodi_id, function($query) use ($user){
-			return $query->where('id', $user->prodi_id);
-  		})->get();
-        return view('pengajuan.index', compact('pengajuan', 'prodi'));
-    }
+	
+		// Mengembalikan view dengan data yang diperlukan
+		return view('pengajuan.index', compact('pengajuan', 'years', 'prodi'));
+	}
+	
 
     public function create()
     {

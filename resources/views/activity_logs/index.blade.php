@@ -21,9 +21,9 @@
                     if (stripos($log->action, 'Mengubah') !== false) {
                         $actionClass = 'text-warning';
                     } elseif (stripos($log->action, 'Membuat') !== false || stripos($log->action, 'Menambah Approve Keuangan') !== false) {
-                        $actionClass = 'text-success'; // Ini mencakup juga aksi menambah approve keuangan
+                        $actionClass = 'text-primary'; // Ini mencakup juga aksi menambah approve keuangan
                     } elseif (stripos($log->action, 'Menyetujui') !== false) {
-                        $actionClass = 'text-primary';
+                        $actionClass = 'text-success';
                     } elseif (stripos($log->action, 'Menolak') !== false) {
                         $actionClass = 'text-danger';
                     } elseif (stripos($log->action, 'Menghapus') !== false) {
